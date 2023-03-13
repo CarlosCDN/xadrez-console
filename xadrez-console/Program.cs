@@ -3,6 +3,8 @@ using xadrez_console;
 using System;
 using xadrez;
 
+
+
 try 
     {
         PartidaDeXadrez partida = new PartidaDeXadrez();
@@ -13,7 +15,13 @@ try
 
         Console.Write("Origem: ");
         Posicao origem = Tela.lerPosicaoXadrez().toPosicao();
-        Console.Write("Destino");
+
+        bool[,] posicoesPossiveis = partida.tab.peca(origem).movimentosPossiveis();
+
+        Console.Clear();
+        Tela.ImprimirTabuleiro(partida.tab, posicoesPossiveis); ;
+
+        Console.Write("Destino: ");
         Posicao destino = Tela.lerPosicaoXadrez().toPosicao();
 
         partida.executaMovimento(origem, destino);

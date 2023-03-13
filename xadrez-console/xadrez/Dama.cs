@@ -12,5 +12,18 @@ namespace xadrez
         {
             return "D";
         }
+        private bool podeMover(Posicao pos)
+        {
+            Peca p = tab.peca(pos);
+            return p == null || p.Cor != Cor;
+        }
+        public override bool[,] movimentosPossiveis()
+        {
+            bool[,] mat = new bool[tab.linha, tab.coluna];
+
+            Posicao pos = new Posicao(0, 0);
+
+            return mat;
+        }
     }
 }

@@ -7,6 +7,8 @@
 
         private Peca[,] pecas;
 
+        
+
         public Tabuleiro(int linha, int coluna)
         {
             this.linha = linha;
