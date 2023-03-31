@@ -30,7 +30,7 @@ namespace tabuleiro
                 for (int i = 0; i < tab.linha; i++)
                 {
                     for (int j = 0; j < tab.coluna; j++) {
-                        if (mat[i, i]) {
+                        if (mat[i, j]) {
                             return true;
                         }
                     }
