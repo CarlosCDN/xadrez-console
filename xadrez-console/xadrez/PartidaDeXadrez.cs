@@ -13,6 +13,8 @@ namespace xadrez
         private HashSet<Peca> pecas;
         private HashSet<Peca> capturadas;
         public bool xeque { get; private set; }
+        public Peca vuneravelEnPassant { get; private set; }
+
         public PartidaDeXadrez() 
         {
             tab = new Tabuleiro(8, 8);
@@ -20,6 +22,7 @@ namespace xadrez
             jogadorAtual = Cor.Branco;
             terminada = false;
             xeque = false;
+            vuneravelEnPassant = null;
             pecas = new HashSet<Peca>();
             capturadas = new HashSet<Peca>();
             colocarPecas();
@@ -50,6 +53,27 @@ namespace xadrez
                 T.incrementarQtdMovimentos();
                 tab.colocarPeca(T, destinoT);
             }
+
+            // Jogada Especial en passant
+            if(p is Peao)
+            {
+                if(origem.coluna != destino.coluna && pecaCapturada == null) 
+                {
+                    Posicao posP;
+                    if(p.Cor == Cor.Branco)
+                    {
+                        posP = new Posicao(destino.linha + 1, destino.coluna);
+                    }
+                    else
+                    {
+                        posP =new Posicao(destino.linha - 1, destino.coluna);
+                    }
+                    pecaCapturada = tab.retirarPeca(posP);
+                    capturadas.Add(pecaCapturada);
+                }
+
+            }
+
             return pecaCapturada;
         }
         public  void desfazMovimento(Posicao origem, Posicao destino, Peca pecaCapturada)
@@ -80,15 +104,84 @@ namespace xadrez
                 T.decrementarQtdMovimentos();
                 tab.colocarPeca(T, origemT);
             }
+            //Jogada Especial en passant
+            if(p is Peao)
+            {
+                if(origem.coluna != destino.coluna && pecaCapturada == vuneravelEnPassant)
+                {
+                    Peca peao = tab.retirarPeca(destino);
+                    Posicao posP;
+                    if(p.Cor == Cor.Branco) { 
+                        posP = new Posicao(3, destino.coluna);
+                    }
+                    else
+                    {
+                        posP = new Posicao(4, destino.coluna);
+                    }
+                    tab.colocarPeca(peao, posP);
+                }
+            }
         }
-        public void realizaJogada(Posicao Origem, Posicao Destino) {
-            Peca pecaCapturada = executaMovimento(Origem, Destino);
+        public void realizaJogada(Posicao origem, Posicao destino) {
+            Peca pecaCapturada = executaMovimento(origem, destino);
 
             if (estaEmXeque(jogadorAtual)) { 
-             desfazMovimento(Origem, Destino, pecaCapturada);
+             desfazMovimento(origem, destino, pecaCapturada);
                 throw new TabuleiroException("Você não pode se colocar em xeque!");
             }
-            if(estaEmXeque(adversario(jogadorAtual)))
+
+            Peca p = tab.peca(destino);
+
+            // Jogada Especial promocao
+            if(p is Peao)
+            {
+                if ((p.Cor == Cor.Branco && destino.linha == 0) || (p.Cor == Cor.Preto && destino.linha == 8)) 
+                { 
+                    p = tab.retirarPeca(destino);
+                    pecas.Remove(p);
+                    Console.WriteLine("Digite a peça de promoção:");
+                    Console.WriteLine("1 - Dama, 2 - Bispo, 3 - Cavalo, 4 -Torre ");
+                    int promocao = int.Parse(Console.ReadLine());
+                    while (promocao > 0) {
+
+                        if (promocao == 1)
+                        {
+                            Peca dama = new Dama(tab, p.Cor);
+                            tab.colocarPeca(dama, destino);
+                            pecas.Add(dama);
+                            break;
+                        }
+                    else if (promocao == 2)
+                        {
+                            Peca bispo = new Bispo(tab, p.Cor);
+                            tab.colocarPeca(bispo, destino);
+                            pecas.Add(bispo);
+                            break;
+                        }
+                    else if(promocao == 3)
+                        {
+                            Peca cavalo = new Cavalo(tab, p.Cor);
+                            tab.colocarPeca(cavalo, destino);
+                            pecas.Add(cavalo);
+                            break;
+                        }
+                    else if( promocao == 4)
+                        {
+                            Peca torre = new Torre(tab, p.Cor);
+                            tab.colocarPeca(torre, destino);
+                            pecas.Add(torre);
+                            break;
+                        }
+                        Console.WriteLine("Opção invalida digite novamente:");
+                        Console.WriteLine("Digite a peça de promoção:");
+                        Console.WriteLine("1 - Dama, 2 - Bispo, 3 - Cavalo, 4 -Torre ");
+                        promocao = int.Parse(Console.ReadLine());
+
+                    }
+                }
+            }
+
+            if (estaEmXeque(adversario(jogadorAtual)))
             {
                 xeque = true;
             }
@@ -104,6 +197,16 @@ namespace xadrez
             {
                 turno++;
                 mudaJogador();
+            }
+
+            // #JogadaEspecial en passant
+            if(p is Peao && ( destino.linha == origem.linha - 2 || destino.linha == origem.linha + 2))
+            {
+                vuneravelEnPassant = p;
+            }
+            else
+            {
+                vuneravelEnPassant = null;
             }
         }
 
@@ -253,14 +356,14 @@ namespace xadrez
             colocarNovaPeca('f', 1, new Bispo(tab, Cor.Branco));
             colocarNovaPeca('g', 1, new Cavalo(tab, Cor.Branco));
             colocarNovaPeca('h', 1, new Torre(tab, Cor.Branco));
-            colocarNovaPeca('a', 2, new Peao(tab, Cor.Branco));
-            colocarNovaPeca('b', 2, new Peao(tab, Cor.Branco));
-            colocarNovaPeca('c', 2, new Peao(tab, Cor.Branco));
-            colocarNovaPeca('d', 2, new Peao(tab, Cor.Branco));
-            colocarNovaPeca('e', 2, new Peao(tab, Cor.Branco));
-            colocarNovaPeca('f', 2, new Peao(tab, Cor.Branco));
-            colocarNovaPeca('g', 2, new Peao(tab, Cor.Branco));
-            colocarNovaPeca('h', 2, new Peao(tab, Cor.Branco));
+            colocarNovaPeca('a', 2, new Peao(tab, Cor.Branco, this));
+            colocarNovaPeca('b', 2, new Peao(tab, Cor.Branco, this));
+            colocarNovaPeca('c', 2, new Peao(tab, Cor.Branco, this));
+            colocarNovaPeca('d', 2, new Peao(tab, Cor.Branco, this));
+            colocarNovaPeca('e', 2, new Peao(tab, Cor.Branco, this));
+            colocarNovaPeca('f', 2, new Peao(tab, Cor.Branco, this));
+            colocarNovaPeca('g', 2, new Peao(tab, Cor.Branco, this));
+            colocarNovaPeca('h', 2, new Peao(tab, Cor.Branco, this));
 
 
 
@@ -274,14 +377,14 @@ namespace xadrez
             colocarNovaPeca('f', 8, new Bispo(tab, Cor.Preto));
             colocarNovaPeca('g', 8, new Cavalo(tab, Cor.Preto));
             colocarNovaPeca('h', 8, new Torre(tab, Cor.Preto));
-            colocarNovaPeca('a', 7, new Peao(tab, Cor.Preto));
-            colocarNovaPeca('b', 7, new Peao(tab, Cor.Preto));
-            colocarNovaPeca('c', 7, new Peao(tab, Cor.Preto));
-            colocarNovaPeca('d', 7, new Peao(tab, Cor.Preto));
-            colocarNovaPeca('e', 7, new Peao(tab, Cor.Preto));
-            colocarNovaPeca('f', 7, new Peao(tab, Cor.Preto));
-            colocarNovaPeca('g', 7, new Peao(tab, Cor.Preto));
-            colocarNovaPeca('h', 7, new Peao(tab, Cor.Preto));
+            colocarNovaPeca('a', 7, new Peao(tab, Cor.Preto, this));
+            colocarNovaPeca('b', 7, new Peao(tab, Cor.Preto, this));
+            colocarNovaPeca('c', 7, new Peao(tab, Cor.Preto, this));
+            colocarNovaPeca('d', 7, new Peao(tab, Cor.Preto, this));
+            colocarNovaPeca('e', 7, new Peao(tab, Cor.Preto, this));
+            colocarNovaPeca('f', 7, new Peao(tab, Cor.Preto, this));
+            colocarNovaPeca('g', 7, new Peao(tab, Cor.Preto, this));
+            colocarNovaPeca('h', 7, new Peao(tab, Cor.Preto, this));
 
 
         }
